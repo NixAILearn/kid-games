@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Kid Games">
+<meta name="theme-color" content="#1a1050">
+<title>Kid Games Arcade</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
+html,body{margin:0;min-height:100%;background:#1a1050;color:#fff;font-family:"Trebuchet MS","Comic Sans MS",system-ui,sans-serif;overscroll-behavior:none}
+body{min-height:100vh;min-height:100dvh;background:radial-gradient(circle at 20% 10%,#5b2bd6 0,transparent 45%),radial-gradient(circle at 85% 90%,#ff3d8a 0,transparent 40%),linear-gradient(160deg,#1a1050,#0b2a6e);background-attachment:fixed;overflow-x:hidden}
+canvas#bg{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}
+main{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:max(20px,env(safe-area-inset-top)) 18px max(28px,env(safe-area-inset-bottom));text-align:center;user-select:none;-webkit-user-select:none}
+h1{margin:6px 0 4px;font-size:clamp(38px,8vw,84px);line-height:1.05;letter-spacing:1px;color:#ffe66d;text-shadow:0 0 28px #ff9a1f,0 6px 0 #a64b00}
+.sub{font-size:clamp(16px,2.6vw,26px);margin:0 0 22px;color:#bfe9ff;font-weight:700}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:clamp(14px,2.4vw,26px)}
+.card{display:flex;flex-direction:column;align-items:center;justify-content:space-between;gap:8px;min-height:clamp(230px,34vh,330px);padding:20px 16px 18px;border-radius:30px;color:#fff;text-decoration:none;border:5px solid rgba(255,255,255,.85);box-shadow:0 9px 0 rgba(0,0,0,.3),0 18px 36px rgba(0,0,0,.35);transition:transform .15s,box-shadow .15s;touch-action:manipulation;position:relative;overflow:hidden}
+.card:hover{transform:translateY(-6px) scale(1.03)}
+.card:active{transform:translateY(5px) scale(.98);box-shadow:0 3px 0 rgba(0,0,0,.3)}
+.card::after{content:"";position:absolute;inset:0;background:linear-gradient(120deg,rgba(255,255,255,.28),transparent 40%);pointer-events:none}
+.ico{font-size:clamp(64px,11vw,104px);line-height:1;filter:drop-shadow(0 6px 6px rgba(0,0,0,.35));animation:bob 2.6s ease-in-out infinite}
+.card:nth-child(2) .ico{animation-delay:-.6s}.card:nth-child(3) .ico{animation-delay:-1.2s}.card:nth-child(4) .ico{animation-delay:-1.8s}
+@keyframes bob{50%{transform:translateY(-10px) rotate(5deg)}}
+.card h2{margin:0;font-size:clamp(24px,3.4vw,34px);text-shadow:0 3px 0 rgba(0,0,0,.3)}
+.card p{margin:0;font-size:clamp(14px,1.9vw,18px);font-weight:700;line-height:1.35;text-shadow:0 2px 3px rgba(0,0,0,.35)}
+.tags{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.tags span{background:rgba(0,0,0,.28);border-radius:999px;padding:3px 11px;font-size:clamp(11px,1.5vw,14px);font-weight:800}
+.play{margin-top:4px;background:#fff;color:#222;border-radius:999px;padding:8px 26px;font-weight:900;font-size:clamp(17px,2.3vw,22px);box-shadow:0 4px 0 rgba(0,0,0,.28)}
+.volcano{background:linear-gradient(160deg,#ff7a1a,#c0300a)}
+.race{background:linear-gradient(160deg,#2f9bff,#2a4fd6)}
+.bubble{background:linear-gradient(160deg,#a259ff,#e0428f)}
+.space{background:linear-gradient(160deg,#24c6dc,#514a9d)}
+footer{margin-top:26px;font-size:14px;opacity:.7}
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas>
+<main>
+  <h1>🎮 Kid Games Arcade 🎮</h1>
+  <p class="sub">Pick a game and play!</p>
+  <div class="grid">
+    <a class="card volcano" href="volcano.html">
+      <div class="ico">🌋</div>
+      <h2>Volcano Builder</h2>
+      <p>Put the puzzle pieces together, then watch it erupt!</p>
+      <div class="tags"><span>🧩 Puzzle</span><span>10 stages</span></div>
+      <div class="play">▶ PLAY</div>
+    </a>
+    <a class="card race" href="car_race.html">
+      <div class="ico">🏎️</div>
+      <h2>Bro &amp; Sis Racers</h2>
+      <p>Race Ru and Ny around the world and win the trophy!</p>
+      <div class="tags"><span>🏁 Racing</span><span>5 countries</span><span>♾️ Endless</span></div>
+      <div class="play">▶ PLAY</div>
+    </a>
+    <a class="card bubble" href="balloon.html">
+      <div class="ico">🫧</div>
+      <h2>Bubble Pop</h2>
+      <p>Pop the bubbles, dodge the bombs!</p>
+      <div class="tags"><span>👆 Tap</span><span>5 stages</span><span>♾️ Endless</span></div>
+      <div class="play">▶ PLAY</div>
+    </a>
+    <a class="card space" href="space_pop.html">
+      <div class="ico">🚀</div>
+      <h2>Space Snack Pop</h2>
+      <p>Fly your rocket, grab the star snacks, dodge the rocks!</p>
+      <div class="tags"><span>⭐ Collect</span><span>5 stages</span><span>♾️ Endless</span></div>
+      <div class="play">▶ PLAY</div>
+    </a>
+  </div>
+  <footer>Works on iPad, phones and laptops · Tip: on iPad tap Share → “Add to Home Screen” for full-screen play</footer>
+</main>
+<script>
+// floating background emoji
+(()=>{const c=document.getElementById('bg'),x=c.getContext('2d');let W,H,D;const E=['⭐','🫧','✨','🌟','💫'];let p=[];
+function size(){D=Math.min(devicePixelRatio||1,2);W=innerWidth;H=innerHeight;c.width=W*D;c.height=H*D;p=Array.from({length:22},()=>({x:Math.random()*W,y:Math.random()*H,s:14+Math.random()*26,v:12+Math.random()*28,e:E[Math.floor(Math.random()*E.length)],r:Math.random()*6}));}
+size();addEventListener('resize',size);
+let last=performance.now();(function f(t){const dt=Math.min(.05,(t-last)/1000);last=t;x.setTransform(D,0,0,D,0,0);x.clearRect(0,0,W,H);x.globalAlpha=.35;
+p.forEach(o=>{o.y-=o.v*dt;o.r+=dt;if(o.y<-40){o.y=H+40;o.x=Math.random()*W;}x.font=o.s+'px serif';x.fillText(o.e,o.x+Math.sin(o.r)*12,o.y);});requestAnimationFrame(f);})(last);})();
+</script>
+</body>
+</html>
