@@ -429,7 +429,7 @@ function showResult(){
         $('rEmo').textContent='💫';$('rTitle').textContent='GAME OVER';
         $('rText').innerHTML='You won <b>'+(raceNo-1)+'</b> race'+(raceNo-1===1?'':'s')+' in Endless Mode!<br>🏅 Best: <b>'+best+'</b>';
         $('bNext').textContent='▶ PLAY AGAIN';$('bNext').dataset.act='restart';
-        $('bMenu').textContent='🏠 MAIN MENU';$('bMenu').dataset.act='home';$('bMenu').style.display='';
+        $('bMenu').textContent='🏠 ARCADE HOME';$('bMenu').dataset.act='home';$('bMenu').style.display='';
       }
     }
     mode='result';showScr('sResult');return;
@@ -458,7 +458,7 @@ $('bNext').addEventListener('click',()=>{
 });
 function goHome(){mode='menu';endless=false;setTrack(0);$('bestLine').textContent=best?'🏅 Endless best: '+best+' races':'';showScr('sStart');setHud(false);}
 function goSelect(){mode='select';$('bStart').textContent=endless?'START ENDLESS MODE':'START WORLD TOUR';showScr('sSelect');setHud(false);}
-$('bMenu').addEventListener('click',()=>{if($('bMenu').dataset.act==='home')goHome();else goSelect();});
+$('bMenu').addEventListener('click',()=>{if($('bMenu').dataset.act==='home')location.href='index.html';else goSelect();});
 $('bAgain').addEventListener('click',()=>{initAudio();trackIdx=0;setTrack(0);endless=false;goSelect();});
 $('bPlay').addEventListener('click',()=>{initAudio();endless=false;goSelect();});
 $('bEndless').addEventListener('click',()=>{initAudio();endless=true;goSelect();});
@@ -488,7 +488,7 @@ function bindBtn(id,key){
   el.addEventListener('contextmenu',e=>e.preventDefault());
 }
 bindBtn('bL','l');bindBtn('bR','r');bindBtn('bG','g');bindBtn('bB','b');
-document.addEventListener('touchmove',e=>{if(!e.target.closest('#screen'))e.preventDefault();},{passive:false});
+document.addEventListener('touchmove',e=>{if(!e.target.closest('#screen,#homeLink,#mute'))e.preventDefault();},{passive:false});
 ['gesturestart','gesturechange','dblclick','contextmenu'].forEach(ev=>document.addEventListener(ev,e=>e.preventDefault()));
 
 /* ============ simulation ============ */
@@ -923,6 +923,9 @@ resize();setTrack(0);P.pos=0;
 drawCards(0);
 requestAnimationFrame(frame);
 })();
+
+// Home button: always go to the arcade home page
+(function(){const h=document.getElementById('homeLink');if(h){const go=e=>{e.preventDefault();e.stopPropagation();location.href='index.html';};h.addEventListener('click',go);h.addEventListener('touchend',go,{passive:false});}})();
 </script>
 </body>
 </html>

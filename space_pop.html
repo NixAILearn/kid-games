@@ -164,7 +164,7 @@ function P(){ // fixed per stage, or smoothly rising difficulty in endless mode
 const HOME_DESC=$('desc').innerHTML;
 function showHome(){
   mode='menu';items=[];
-  showScreen('🚀','SPACE SNACK POP',HOME_DESC+(best?'<br><br>🏅 Endless best: <span class="yl">'+best+'</span>':''),[['▶ ADVENTURE · 5 STAGES','adv'],['♾️ ENDLESS MODE','end',1]]);
+  showScreen('🚀','SPACE SNACK POP',HOME_DESC+(best?'<br><br>🏅 Endless best: <span class="yl">'+best+'</span>':''),[['▶ ADVENTURE · 5 STAGES','adv'],['♾️ ENDLESS MODE','end',1],['🏠 ARCADE HOME','arcade']]);
 }
 function act(a){
   initAudio();
@@ -172,6 +172,7 @@ function act(a){
   else if(a==='end'){endless=true;stage=1;score=0;endLevel=1;startStage();}
   else if(a==='retry'){startStage();}
   else if(a==='menu'){showHome();}
+  else if(a==='arcade'){location.href='index.html';}
 }
 ['btn1','btn2','btn3'].forEach(id=>$(id).addEventListener('click',()=>act($(id).dataset.act)));
 function startBonus(){
@@ -196,14 +197,14 @@ function gameOver(){
   mode='over';sndLose();
   if(endless){
     const nb=score>best;if(nb){best=score;try{localStorage.setItem('spacepop_best',best);}catch(_){}}
-    showScreen('💫','GAME OVER!','You scored <span class="yl">'+score+'</span> ⭐ and reached <span class="cy">Level '+endLevel+'</span>!<br>'+(nb?'🎉 NEW BEST SCORE! 🎉':'🏅 Best: <span class="yl">'+best+'</span>'),[['▶ PLAY AGAIN','end'],['🏠 MAIN MENU','menu',1]]);
+    showScreen('💫','GAME OVER!','You scored <span class="yl">'+score+'</span> ⭐ and reached <span class="cy">Level '+endLevel+'</span>!<br>'+(nb?'🎉 NEW BEST SCORE! 🎉':'🏅 Best: <span class="yl">'+best+'</span>'),[['▶ PLAY AGAIN','end'],['🏠 ARCADE HOME','arcade',1]]);
   }else{
-    showScreen('💫','OH NO!','Your rocket needs a break on <span class="cy">Stage '+stage+'</span>.<br>Score: <span class="yl">'+score+'</span> ⭐<br>Let\'s try again — you can do it!',[['TRY AGAIN','retry'],['START OVER','adv',1],['🏠 MAIN MENU','menu']]);
+    showScreen('💫','OH NO!','Your rocket needs a break on <span class="cy">Stage '+stage+'</span>.<br>Score: <span class="yl">'+score+'</span> ⭐<br>Let\'s try again — you can do it!',[['TRY AGAIN','retry'],['START OVER','adv',1],['🏠 ARCADE HOME','arcade']]);
   }
 }
 function victory(){
   mode='win';
-  showScreen('🏆','SPACE CHAMPION!','You collected snacks across <span class="cy">all 5 stages</span>!<br>Final score: <span class="yl">'+score+'</span> ⭐<br>Amazing flying, captain! 🎉<br>Ready for a real challenge?',[['PLAY AGAIN','adv'],['♾️ ENDLESS MODE','end',1],['🏠 MAIN MENU','menu']]);
+  showScreen('🏆','SPACE CHAMPION!','You collected snacks across <span class="cy">all 5 stages</span>!<br>Final score: <span class="yl">'+score+'</span> ⭐<br>Amazing flying, captain! 🎉<br>Ready for a real challenge?',[['PLAY AGAIN','adv'],['♾️ ENDLESS MODE','end',1],['🏠 ARCADE HOME','arcade']]);
 }
 
 /* ---------- items ---------- */
@@ -261,7 +262,7 @@ function setTargetFromPointer(e){
 }
 cv.addEventListener('pointerdown',e=>{e.preventDefault();initAudio();setTargetFromPointer(e);if(e.pointerType==='mouse')fire();try{cv.setPointerCapture(e.pointerId);}catch(_){}});
 cv.addEventListener('pointermove',e=>{if(e.pointerType==='mouse'||e.buttons||e.pressure>0)setTargetFromPointer(e);});
-['touchmove','touchstart'].forEach(ev=>document.addEventListener(ev,e=>{if(!e.target.closest('#screen'))e.preventDefault();},{passive:false}));
+['touchmove','touchstart'].forEach(ev=>document.addEventListener(ev,e=>{if(!e.target.closest('#screen,#homeLink,#mute,#fire'))e.preventDefault();},{passive:false}));
 ['gesturestart','gesturechange','dblclick','contextmenu'].forEach(ev=>document.addEventListener(ev,e=>e.preventDefault()));
 addEventListener('keydown',e=>{
   if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','KeyW','KeyA','KeyS','KeyD'].includes(e.code)&&(mode==='play'||mode==='intro'||mode==='warp')){e.preventDefault();keys[e.code]=true;}
@@ -396,6 +397,9 @@ let last=performance.now();
 function frame(ts){const t=ts||performance.now(),dt=Math.min(.05,Math.max(0,(t-last)/1000));last=t;update(dt);render();requestAnimationFrame(frame);}
 resize();hud();showHome();requestAnimationFrame(frame);
 })();
+
+// Home button: always go to the arcade home page
+(function(){const h=document.getElementById('homeLink');if(h){const go=e=>{e.preventDefault();e.stopPropagation();location.href='index.html';};h.addEventListener('click',go);h.addEventListener('touchend',go,{passive:false});}})();
 </script>
 </body>
 </html>
