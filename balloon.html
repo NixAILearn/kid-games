@@ -56,7 +56,8 @@ canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-acti
     <h1 id="title">BUBBLE POP!</h1>
     <p id="desc">Pop the <span class="hl">colourful bubbles</span> to fill the bar and move up a stage!<br>
       Careful — don't pop the <span class="bad">black bombs</span> 💣<br>
-      <span class="hl">Gold bubbles</span> count triple!<br>
+      <span class="hl">Gold bubbles</span> count triple, and the rainbow 💥 <span class="hl">booster balloon</span> pops everything at once!<br>
+      Look closely — some sneaky bombs dress up as bubbles (spot the fuse and the grumpy face)!<br>
       <b>♾️ Endless Mode:</b> no stages — keep popping until you lose all 3 hearts!<br><br>
       <b>Tablet:</b> tap the bubbles &nbsp;·&nbsp; <b>Mouse:</b> click &nbsp;·&nbsp; <b>Keyboard:</b> arrows move the ring, Space pops</p>
     <div>
@@ -75,11 +76,11 @@ const $=id=>document.getElementById(id);
 
 /* ---------- config ---------- */
 const STAGES=[
-  {target:8, gap:.95,speed:75, bomb:.10,gold:0,  sway:0, rMin:36,rMax:54},
-  {target:12,gap:.80,speed:95, bomb:.14,gold:0,  sway:20,rMin:34,rMax:52},
-  {target:16,gap:.68,speed:120,bomb:.18,gold:.10,sway:35,rMin:30,rMax:48},
-  {target:20,gap:.56,speed:150,bomb:.22,gold:.10,sway:50,rMin:27,rMax:44},
-  {target:25,gap:.46,speed:185,bomb:.26,gold:.12,sway:65,rMin:23,rMax:40}
+  {target:8, gap:.95,speed:80, bomb:.10,gold:0,  sway:0, rMin:36,rMax:54},
+  {target:12,gap:.80,speed:110,bomb:.14,gold:0,  sway:20,rMin:34,rMax:52},
+  {target:16,gap:.68,speed:140,bomb:.18,gold:.10,sway:35,rMin:30,rMax:48},
+  {target:20,gap:.56,speed:175,bomb:.22,gold:.10,sway:50,rMin:27,rMax:44},
+  {target:25,gap:.46,speed:215,bomb:.26,gold:.12,sway:65,rMin:23,rMax:40}
 ];
 const SKY=[['#162a6e','#2f7fd0'],['#0e5a8a','#2fd0c0'],['#4a2a86','#c06ad0'],['#8a2a5a','#ff8a6a'],['#14143c','#4a3aa0']];
 
@@ -103,6 +104,7 @@ function tone(f,t0,d,type,v,f2){const o=AC.createOscillator(),g=AC.createGain();
 function sndPop(size){if(!AC)return;const t=AC.currentTime,f=1100-size*8;tone(f*.6,t,.12,'sine',.35,f*1.4);const n=AC.createBufferSource(),b=AC.createBuffer(1,AC.sampleRate*.06,AC.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*(1-i/d.length);n.buffer=b;const hp=AC.createBiquadFilter();hp.type='highpass';hp.frequency.value=2500;const g=AC.createGain();g.gain.value=.25;n.connect(hp);hp.connect(g);g.connect(master);n.start(t);}
 function sndGold(){if(!AC)return;const t=AC.currentTime;[784,1047,1319,1568].forEach((f,i)=>tone(f,t+i*.06,.2,'triangle',.25));}
 function sndBomb(){if(!AC)return;const t=AC.currentTime;tone(160,t,.45,'sawtooth',.3,35);const n=AC.createBufferSource(),b=AC.createBuffer(1,AC.sampleRate*.5,AC.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2);n.buffer=b;const lp=AC.createBiquadFilter();lp.type='lowpass';lp.frequency.value=500;const g=AC.createGain();g.gain.value=.6;n.connect(lp);lp.connect(g);g.connect(master);n.start(t);}
+function sndBoost(){if(!AC)return;const t=AC.currentTime;tone(120,t,.4,'sine',.4,50);[523,659,784,1047,1319,1568].forEach((f,i)=>tone(f,t+i*.045,.22,'triangle',.22));}
 function sndFan(){if(!AC)return;const t=AC.currentTime;[523,659,784,1047,784,1047,1319].forEach((f,i)=>{tone(f,t+i*.13,.3,'triangle',.28);tone(f/2,t+i*.13,.3,'sine',.12);});}
 function sndLose(){if(!AC)return;const t=AC.currentTime;[392,330,277,220].forEach((f,i)=>tone(f,t+i*.22,.4,'sawtooth',.14));}
 function sndStart(){if(!AC)return;const t=AC.currentTime;[440,660].forEach((f,i)=>tone(f,t+i*.1,.2,'square',.12));}
@@ -136,7 +138,9 @@ function hideScreen(){$('screen').classList.add('hidden');$('hud').classList.add
 function P(){ // current difficulty: fixed per stage, or smoothly rising in endless mode
   if(!endless)return STAGES[stage-1];
   const d=Math.min(4,(endLevel-1)*.5),i=Math.floor(d),f=d-i,a=STAGES[i],b=STAGES[Math.min(4,i+1)],o={};
-  for(const k in a)o[k]=a[k]+(b[k]-a[k])*f;return o;
+  for(const k in a)o[k]=a[k]+(b[k]-a[k])*f;
+  o.speed*=1+Math.min(1,Math.max(0,endLevel-1)*.04);   // endless: a bit faster every single level
+  return o;
 }
 function startStage(){
   items=[];popped=0;lives=3;spawnT=.4;mode='intro';modeT=0;
@@ -188,9 +192,12 @@ function victory(){
 function spawn(){
   const n=P(),r=(n.rMin+Math.random()*(n.rMax-n.rMin))*S;
   const roll=Math.random();
-  const kind=roll<n.bomb?'bomb':(roll<n.bomb+n.gold?'gold':'bubble');
+  const lv=endless?endLevel:stage;
+  let kind=roll<n.bomb?'bomb':(roll<n.bomb+n.gold?'gold':'bubble');
+  if(kind==='bubble'&&lv>=2&&Math.random()<.07&&!items.some(i=>i.kind==='boost'))kind='boost';
+  const sneaky=kind==='bomb'&&lv>=2&&Math.random()<Math.min(.5,.2+lv*.06);   // bomb dressed up as a bubble
   const x0=r+Math.random()*(W-2*r);
-  items.push({kind,x0,x:x0,y:H+r+10,r:kind==='bomb'?Math.max(r,32*S):r,vy:n.speed*S*(.8+Math.random()*.5),ph:Math.random()*6,sw:n.sway*S*(.5+Math.random()),
+  items.push({kind,sneaky,x0,x:x0,y:H+r+10,r:kind==='boost'?Math.max(r,38*S):kind==='bomb'&&!sneaky?Math.max(r,32*S):r,vy:n.speed*S*(.8+Math.random()*.5),ph:Math.random()*6,sw:n.sway*S*(.5+Math.random()),
     col:kind==='gold'?'#ffd23f':'hsl('+Math.floor(Math.random()*360)+',85%,62%)',rot:0});
 }
 function burst(x,y,cols,n,spd){
@@ -209,11 +216,17 @@ function popAt(x,y){
     floatText(it.x,it.y-it.r,'💥 Ouch!','#ff6b6b');hud();
     if(lives<=0){setTimeout(gameOver,450);mode='over-wait';}
   }else{
-    const gold=it.kind==='gold',pts=gold?3:1;
-    popped+=pts;score+=pts;gold?sndGold():sndPop(it.r/S);
-    burst(it.x,it.y,[it.col,'#fff',gold?'#fff3a0':it.col],gold?30:16,gold?380:260);
-    parts.push({t:'ring',x:it.x,y:it.y,vx:0,vy:0,g:0,life:.35,max:.35,size:it.r,c:'rgba(255,255,255,.8)'});
-    floatText(it.x,it.y-it.r,'+'+pts,gold?'#ffe066':'#fff');hud();
+    const award=b=>{const gold=b.kind==='gold',pts=gold?3:1;popped+=pts;score+=pts;
+      burst(b.x,b.y,[b.col,'#fff',gold?'#fff3a0':b.col],gold?30:16,gold?380:260);
+      parts.push({t:'ring',x:b.x,y:b.y,vx:0,vy:0,g:0,life:.35,max:.35,size:b.r,c:'rgba(255,255,255,.8)'});
+      floatText(b.x,b.y-b.r,'+'+pts,gold?'#ffe066':'#fff');return gold;};
+    if(it.kind==='boost'){ // booster balloon: pops everything on screen (bombs fizzle out safely)
+      let n=0;items.forEach(b=>{if(b.kind==='bomb')burst(b.x,b.y,['#888','#ccc','#555'],12);else if(b.kind!=='boost'){award(b);n++;}});items=[];
+      sndBoost();shake=.25;burst(it.x,it.y,['#ff3b5c','#ffd23f','#4cd964','#5ac8fa','#c06aff','#fff'],44,520);
+      parts.push({t:'ring',x:it.x,y:it.y,vx:0,vy:0,g:0,life:.6,max:.6,size:Math.max(W,H)*.35,c:'rgba(255,255,255,.9)'});
+      floatText(it.x,it.y-it.r,'💥 POP ALL!'+(n?' +'+n+' bubbles':''),'#ffe066');
+    }else{award(it)?sndGold():sndPop(it.r/S);}
+    hud();
     if(endless){const L=1+Math.floor(score/12);if(L>endLevel){endLevel=L;sndGold();banner('⭐ Level '+L+'! ⭐');setTimeout(()=>{if(mode==='play')banner('');},1000);}hud();}
     else if(popped>=STAGES[stage-1].target)stageDone();
   }
@@ -262,7 +275,24 @@ function update(dt){
 /* ---------- render ---------- */
 function drawBubble(it){
   const r=it.r;ctx.save();ctx.translate(it.x,it.y);
-  if(it.kind==='bomb'){
+  if(it.kind==='boost'){
+    const h=(time*220)%360;ctx.shadowColor='hsl('+h+',100%,70%)';ctx.shadowBlur=26;
+    const g=ctx.createRadialGradient(-r*.35,-r*.35,r*.05,0,0,r);g.addColorStop(0,'#fff');g.addColorStop(.3,'hsl('+h+',95%,62%)');g.addColorStop(.65,'hsl('+((h+90)%360)+',95%,60%)');g.addColorStop(1,'hsl('+((h+180)%360)+',95%,55%)');
+    ctx.fillStyle=g;ctx.beginPath();ctx.arc(0,0,r,0,6.283);ctx.fill();ctx.shadowBlur=0;
+    ctx.strokeStyle='#fff';ctx.lineWidth=4*S;ctx.stroke();
+    ctx.strokeStyle='rgba(255,255,255,.6)';ctx.lineWidth=3*S;ctx.beginPath();ctx.arc(0,0,r*(1.25+Math.sin(time*7)*.1),0,6.283);ctx.stroke();
+    ctx.font=Math.round(r*1.1)+'px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('💥',0,r*.06);
+  }else if(it.kind==='bomb'&&it.sneaky){
+    // looks like a bubble... but has a little fuse and a grumpy face
+    const g=ctx.createRadialGradient(-r*.35,-r*.35,r*.05,0,0,r);g.addColorStop(0,'rgba(255,255,255,.95)');g.addColorStop(.25,it.col);g.addColorStop(1,'rgba(0,0,0,.5)');
+    ctx.fillStyle=g;ctx.globalAlpha=.92;ctx.beginPath();ctx.arc(0,0,r,0,6.283);ctx.fill();ctx.globalAlpha=1;
+    ctx.strokeStyle='rgba(255,255,255,.75)';ctx.lineWidth=2.5*S;ctx.stroke();
+    ctx.fillStyle='rgba(255,255,255,.75)';ctx.beginPath();ctx.ellipse(-r*.38,-r*.42,r*.22,r*.12,-.6,0,6.283);ctx.fill();
+    ctx.strokeStyle='#6a4a2a';ctx.lineWidth=3.5*S;ctx.beginPath();ctx.moveTo(0,-r);ctx.quadraticCurveTo(r*.2,-r*1.25,r*.4,-r*1.15);ctx.stroke();
+    ctx.fillStyle=Math.sin(time*25)>0?'#ffd60a':'#ff6a00';ctx.beginPath();ctx.arc(r*.4,-r*1.15,3.5*S+Math.sin(time*25)*1.2,0,6.283);ctx.fill();
+    ctx.fillStyle='#1a1a1a';ctx.beginPath();ctx.arc(-r*.28,r*.02,r*.09,0,6.283);ctx.arc(r*.28,r*.02,r*.09,0,6.283);ctx.fill();
+    ctx.strokeStyle='#1a1a1a';ctx.lineWidth=Math.max(2,r*.07);ctx.beginPath();ctx.moveTo(-r*.45,-r*.2);ctx.lineTo(-r*.14,-r*.08);ctx.moveTo(r*.45,-r*.2);ctx.lineTo(r*.14,-r*.08);ctx.moveTo(-r*.2,r*.4);ctx.quadraticCurveTo(0,r*.26,r*.2,r*.4);ctx.stroke();
+  }else if(it.kind==='bomb'){
     const g=ctx.createRadialGradient(-r*.3,-r*.3,r*.1,0,0,r);g.addColorStop(0,'#666');g.addColorStop(.4,'#222');g.addColorStop(1,'#000');
     ctx.fillStyle=g;ctx.beginPath();ctx.arc(0,0,r,0,6.283);ctx.fill();
     ctx.strokeStyle='#ff4444';ctx.lineWidth=4*S;ctx.stroke();
