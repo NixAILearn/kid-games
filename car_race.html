@@ -85,7 +85,7 @@ p.sm{font-size:clamp(14px,2.2vw,22px);margin:8px 0;opacity:.95;line-height:1.45;
   <div class="sc on" id="sStart">
     <h1>Bro &amp; Sis<br><span>Racers</span></h1>
     <div class="tag">🏁 World Tour · 10 Countries · 3 Laps Each 🏁</div>
-    <p class="sm">Beat your brother or sister on every track to become World Champion!<br>Grab ⚡ for a 5-second <b>super boost</b>, steer around slow cars 🚗 and watch out for ditches ⚠️!<br><b>♾️ Endless Mode:</b> race on and on through the countries — the rival gets faster after every win and you have 3 lives (a ditch costs a life!)<br><b>Keyboard:</b> ← → steer · ↑ gas · ↓ brake &nbsp;|&nbsp; <b>Touch:</b> use the big buttons</p>
+    <p class="sm">Beat your brother or sister on every track to become World Champion!<br>Grab ⚡ for a 5-second <b>super boost</b>, steer around slow cars 🚗 and watch out for ditches ⚠️!<br>In ♾️ Endless Mode, grab ⛽ <b>fuel cans</b> to win back a lost life (up to 5 ❤️)!<br><b>♾️ Endless Mode:</b> race on and on through the countries — the rival gets faster after every win and you have 3 lives (a ditch costs a life!)<br><b>Keyboard:</b> ← → steer · ↑ gas · ↓ brake &nbsp;|&nbsp; <b>Touch:</b> use the big buttons</p>
     <button class="btn" id="bPlay">🏁 WORLD TOUR · 10 COUNTRIES</button>
     <button class="btn alt" id="bEndless">♾️ ENDLESS MODE</button>
     <p class="sm" id="bestLine"></p>
@@ -166,6 +166,7 @@ const sndBeep=hi=>{if(AC)tone(hi?880:440,AC.currentTime,hi?.5:.22,'square',.15);
 const sndLap=()=>{if(AC){const t=AC.currentTime;tone(660,t,.12,'triangle',.25);tone(990,t+.1,.2,'triangle',.25);}};
 const sndBump=()=>{if(AC)tone(140,AC.currentTime,.15,'square',.2,60);};
 const sndBoost=()=>{if(AC){const t=AC.currentTime;tone(300,t,.55,'sawtooth',.16,1500);tone(600,t+.08,.5,'square',.07,2200);}};
+const sndFuel=()=>{if(AC){const t=AC.currentTime;[523,659,784,1047].forEach((f,i)=>tone(f,t+i*.07,.2,'triangle',.22));}};
 const sndDitch=()=>{if(AC){const t=AC.currentTime;tone(200,t,.4,'sawtooth',.28,40);tone(90,t,.3,'sine',.4,40);}};
 // cheerful finish melody
 function sndWin(){if(!AC)return;const t=AC.currentTime;[523,659,784,1047,784,1047,1319,1568].forEach((f,i)=>{tone(f,t+i*.14,.32,'triangle',.3);tone(f/2,t+i*.14,.32,'sine',.15);});}
@@ -328,6 +329,7 @@ let trackIdx=0, segs=TRK[0].segs, trackLen=TRK[0].len;
 let chosen=null, rivalName=null;
 let P={pos:0,x:0,speed:0,dist:0,fin:false}, R={x:.4,speed:0,dist:0,fin:false,lane:.4,laneT:0};
 let endless=false, raceNo=1, eLives=3, best=0;
+const MAXLIVES=5;
 let objs=[], boostT=0, hitT=0, shakeT=0, ditchOut=false;
 try{best=+localStorage.getItem('racers_best')||0;}catch(_){}
 let bgOff=0, phaseT=0, raceOn=false, winner=null, frameNo=0, bump=0, lapShown=-1;
@@ -374,12 +376,13 @@ function makeObjs(){
   for(let i=0;i<2+Math.floor(lvl*.6);i++)kinds.push('car');
   for(let i=0;i<1+Math.floor(lvl/3);i++)kinds.push('ditch');
   for(let i=0;i<(lvl>=5?3:2);i++)kinds.push('boost');
+  if(endless)for(let i=0;i<(lvl>=4?2:1);i++)kinds.push('fuel');   // fuel cans give back a lost life
   for(let i=kinds.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[kinds[i],kinds[j]]=[kinds[j],kinds[i]];}
   const span=(trackLen-9000)/kinds.length,cols=['#ffd23f','#4cd964','#ff8a1f','#b06aff','#f2f2f2','#20c0c0'];
   kinds.forEach((k,i)=>{
     const o={k,z:5000+span*(i+.15+r()*.7),x:[-.6,0,.6][Math.floor(r()*3)],cd:0};
     if(k==='car'){o.w=.36;o.v=MAXS*(.28+r()*.14);o.col=cols[Math.floor(r()*cols.length)];}
-    else if(k==='ditch')o.w=.3;else o.w=.38;
+    else if(k==='ditch')o.w=.3;else if(k==='fuel')o.w=.34;else o.w=.38;
     objs.push(o);
   });
 }
@@ -393,6 +396,9 @@ function updateObjs(dt){
   for(const o of objs){
     if(o.cd>0||Math.abs(relZ(o.z,pz))>reach||Math.abs(P.x-o.x)>o.w)continue;
     if(o.k==='boost'){o.cd=4;boostT=5;sndBoost();bigmsg('⚡ BOOST! ⚡','','boost');msgFor('boost',1100);}
+    else if(o.k==='fuel'){o.cd=40;sndFuel();
+      if(eLives<MAXLIVES){eLives++;stageLabel();bigmsg('⛽ +1 ❤️ LIFE!','','fuel');}else bigmsg('⛽ Tank full!','Max lives','fuel');
+      msgFor('fuel',1300);}
     else if(hitT>0)continue;
     else if(o.k==='car'){hitT=.7;boostT=0;P.speed=Math.min(P.speed,MAXS*.5);P.x+=(P.x<o.x?-1:1)*.42;shakeT=.3;sndBump();}
     else{ // ditch
@@ -546,7 +552,7 @@ function update(dt){
     R.laneT-=dt;if(R.laneT<=0){R.laneT=2+Math.random()*3;R.lane=[-.5,-.2,.2,.5][Math.floor(Math.random()*4)];}
     const rc=segAtZ(rz).curve,rs=R.speed/MAXS;
     let dodge=false;   // rival steers around cars and ditches
-    for(const o of objs){if(o.k==='boost')continue;const d=mod(o.z-rz,trackLen);
+    for(const o of objs){if(o.k==='boost'||o.k==='fuel')continue;const d=mod(o.z-rz,trackLen);
       if(d<6000&&Math.abs(o.x-R.x)<.5){dodge=true;R.laneT=1;R.lane=o.x>.3?-.3:o.x<-.3?.3:(R.x>=0?.65:-.65);break;}}
     R.x+=(R.lane-R.x)*dt*(dodge?3.5:.8)-dt*2*rs*rs*rc*CENTRIF*.35;
     R.x=Math.max(-.9,Math.min(.9,R.x));
@@ -768,6 +774,20 @@ function drawObj(o,x,y,k,t){
     ctx.strokeStyle='#ff6a00';ctx.lineWidth=Math.max(1,rx*.1);ctx.lineJoin='round';
     for(let j=0;j<2;j++){const yy=y+ry*(.35-j*.6);ctx.beginPath();ctx.moveTo(x-rx*.45,yy+ry*.3);ctx.lineTo(x,yy-ry*.3);ctx.lineTo(x+rx*.45,yy+ry*.3);ctx.stroke();}
     if(rx>8){ctx.font=Math.round(rx*.9)+'px serif';ctx.fillText('⚡',x,y-rx*.45-Math.sin(t*.006)*rx*.12);}
+  }else if(o.k==='fuel'){
+    if(o.cd>0)return;
+    const p=.75+.25*Math.sin(t*.012),bob=Math.sin(t*.006)*rx*.08,u=rx/36;
+    ctx.fillStyle='rgba(80,255,120,'+(.35*p)+')';ctx.beginPath();ctx.ellipse(x,y,rx*1.2,ry*1.2,0,0,6.283);ctx.fill();
+    ctx.fillStyle='rgba(0,0,0,.3)';ctx.beginPath();ctx.ellipse(x,y,rx*.6,ry*.6,0,0,6.283);ctx.fill();
+    ctx.save();ctx.translate(x,y-rx*.1+bob);ctx.scale(u,u);
+    ctx.fillStyle='#d62828';rrP(ctx,-24,-62,48,56,8);ctx.fill();            // can body
+    ctx.fillStyle='#ff5a5a';rrP(ctx,-20,-58,14,48,5);ctx.fill();            // shine
+    ctx.fillStyle='#b01c1c';rrP(ctx,-12,-76,26,16,4);ctx.fill();            // top handle block
+    ctx.fillStyle='#1b1b1b';ctx.fillRect(-4,-70,10,6);                       // handle hole
+    ctx.fillStyle='#ffe93b';ctx.fillRect(10,-72,12,10);                      // cap
+    ctx.fillStyle='#fff';ctx.fillRect(-18,-46,36,22);
+    ctx.fillStyle='#1fa83a';ctx.font='900 24px Arial,sans-serif';ctx.textAlign='center';ctx.fillText('+❤',0,-28);
+    ctx.restore();
   }else if(o.k==='ditch'){
     ctx.fillStyle='#4a2c14';ctx.beginPath();ctx.ellipse(x,y,rx*1.18,ry*1.25,0,0,6.283);ctx.fill();
     ctx.fillStyle='#0a0605';ctx.beginPath();ctx.ellipse(x,y+ry*.08,rx,ry,0,0,6.283);ctx.fill();
